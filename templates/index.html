@@ -1,129 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>TripMate AI</title>
-
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoyageAI — AI trip planning, itemized like a boarding pass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
+  <div class="page-bg"></div>
 
-    <div class="page-bg">
-        <div class="gradient-circle circle-1"></div>
-        <div class="gradient-circle circle-2"></div>
-        <div class="gradient-circle circle-3"></div>
-    </div>
+  <main class="app-container">
 
-    <main class="app-container">
+    <section class="hero-section">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Voyage AI Multi-agent trip planning
+      </div>
+      <h1>Plan a trip your <em>whole</em> itinerary can stand behind.</h1>
+      <p>
+        Describe where you want to go. Specialist agents check flights, hotels,
+        weather and budget in parallel, then hand you a draft to approve
+        before anything is final.
+      </p>
+      <div class="pipeline-strip">
+        <span class="step">Flight</span><span class="sep">→</span>
+        <span class="step">Hotel</span><span class="sep">→</span>
+        <span class="step">Weather</span><span class="sep">→</span>
+        <span class="step">Budget</span><span class="sep">→</span>
+        <span class="step">Itinerary</span><span class="sep">→</span>
+        <span class="step">Your review</span>
+      </div>
+    </section>
 
-        <section class="hero-section">
-            <div class="badge">
-                ✈️ TripMate AI — A Multi-Agent Travel Planner with LangGraph
-            </div>
+    <section class="planner-card">
+      <div class="ticket-main">
+        <div class="card-header">
+          <div class="eyebrow-row">
+            <span class="eyebrow">Trip request</span>
+            <h2>Where are you headed?</h2>
+            <p>Include your origin, trip length and budget for the most useful draft.</p>
+          </div>
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            Agents online
+          </div>
+        </div>
 
-            <h1>
-                Plan Your Perfect Trip with AI
-            </h1>
+        <textarea
+          id="userInput"
+          placeholder="Plan a complete 7 day Japan trip from India, including flights, hotels and sightseeing, under ₹2,00,000..."
+        ></textarea>
+        <button id="sendBtn" onclick="sendMessage()">
+          <span id="btnText">Generate draft itinerary</span>
+          <span id="btnLoader" class="loader hidden"></span>
+        </button>
+      </div>
 
-            <p>
-                Search flights, discover hotels, and generate a complete travel itinerary using a multi-agent LangGraph system.
-            </p>
-        </section>
+      <div class="ticket-divider"></div>
 
-        <section class="planner-card">
+      <div class="ticket-stub">
+        <div class="stub-label">Popular routes</div>
+        <div class="quick-prompts">
+          <button onclick="setPrompt('Plan a complete 7 days Japan trip from India including flights, hotels and sightseeing under 2 lakhs.')">
+            JAPAN · 7D · ₹2L cap
+          </button>
+          <button onclick="setPrompt('Plan a 5 days Dubai trip from Delhi with flights, hotels and sightseeing.')">
+            DUBAI · 5D · from DEL
+          </button>
+          <button onclick="setPrompt('Plan a 7 days Thailand trip from India with budget hotels and sightseeing.')">
+            THAILAND · 7D · budget stay
+          </button>
+          <button onclick="setPrompt('Give me all country flight info.')">
+            GLOBAL · flight info only
+          </button>
+        </div>
+        <div class="stub-footer">
+          <span>VOYAGE-AI</span>
+          <span>NO EXP.</span>
+        </div>
+      </div>
+    </section>
 
-            <div class="card-header">
-                <div>
-                    <h2>Where do you want to go?</h2>
-                    <p>
-                        Example: Plan a complete 7 days Japan trip from Bangladesh under 2 lakhs.
-                    </p>
-                </div>
+    <section id="workflowSection" class="workflow-section hidden">
+      <div class="workflow-header">
+        <div>
+          <span class="eyebrow">Supervisor agent</span>
+          <h2>Departures board</h2>
+        </div>
+        <span id="guardrailBadge" class="guardrail-badge">Guardrail passed</span>
+      </div>
+      <p id="supervisorReasoning" class="supervisor-reasoning"></p>
+      <div id="agentChips" class="agent-chips"></div>
+    </section>
 
-                <div class="status-pill">
-                    <span class="status-dot"></span>
-                    Online
-                </div>
-            </div>
+    <section id="tripStatusSection" class="trip-status-section hidden">
+      <div class="trip-status-item">
+        <span class="ts-label">Budget risk</span>
+        <span class="ts-value"><span id="riskDot" class="ts-dot risk-low"></span><span id="riskText">Low</span></span>
+      </div>
+      <div class="trip-status-item">
+        <span class="ts-label">Feasible</span>
+        <span class="ts-value" id="feasibleText">Yes</span>
+      </div>
+      <div class="trip-status-item">
+        <span class="ts-label">Replanned for budget</span>
+        <span class="ts-value" id="replannedText">No</span>
+      </div>
+      <div class="trip-status-item">
+        <span class="ts-label">Negotiation rounds</span>
+        <span class="ts-value" id="roundsText">0</span>
+      </div>
+    </section>
 
-            <div class="input-area">
-                <textarea
-                    id="userInput"
-                    placeholder="Plan a complete 7 days Japan trip including flights, hotels and sightseeing under 2 lakhs..."
-                ></textarea>
+    <section id="resultSection" class="result-section hidden">
+      <div class="result-header">
+        <div>
+          <span class="eyebrow">Deliverable</span>
+          <h2 id="resultTitle">Your AI travel plan</h2>
+          <p id="threadInfo">Thread ID: -</p>
+        </div>
+        <div class="result-actions">
+          <button class="copy-btn" onclick="copyResult()">Copy</button>
+          <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+        </div>
+      </div>
 
-                <button id="sendBtn" onclick="sendMessage()">
-                    <span id="btnText">Generate Plan</span>
-                    <span id="btnLoader" class="loader hidden"></span>
-                </button>
-            </div>
+      <div id="pdfContent" class="pdf-content">
+        <h1 class="pdf-title">AI Travel Plan</h1>
+        <div id="resultBox" class="result-box"></div>
+      </div>
+    </section>
 
-            <div class="quick-prompts">
-                <button onclick="setPrompt('Plan a complete 7 days Japan trip from Bangladesh including flights, hotels and sightseeing under 2 lakhs.')">
-                    Japan Trip
-                </button>
+    <section id="approvalSection" class="approval-section hidden">
+      <div class="approval-icon">Review<br>required</div>
+      <div class="approval-content">
+        <span class="eyebrow">Human in the loop</span>
+        <h2>Check the draft before it's final</h2>
+        <p id="approvalRequest">
+          Approve the draft or leave feedback and the itinerary agent will revise it.
+        </p>
 
-                <button onclick="setPrompt('Plan a 5 days Dubai trip from Dhaka with flights, hotels and sightseeing.')">
-                    Dubai Trip
-                </button>
+        <textarea
+          id="approvalFeedback"
+          class="feedback-input"
+          placeholder="What should change? For example: reduce the hotel cost and add one free day..."
+        ></textarea>
 
-                <button onclick="setPrompt('Plan a 7 days Thailand trip from Bangladesh with budget hotels and sightseeing.')">
-                    Thailand Trip
-                </button>
+        <div class="approval-actions">
+          <button id="approveBtn" class="approve-btn" onclick="submitApproval(true)">
+            Approve & generate final
+          </button>
+          <button id="reviseBtn" class="revise-btn" onclick="submitApproval(false)">
+            Revise using feedback
+          </button>
+        </div>
+      </div>
+    </section>
 
-                <button onclick="setPrompt('Give me all country flight info.')">
-                    Global Flights
-                </button>
-            </div>
+    <section id="errorBox" class="error-box hidden"></section>
+  </main>
 
-        </section>
+  <footer>
+    Built with FastAPI · LangGraph · Groq · PostgreSQL · Tavily · AviationStack · MCP
+  </footer>
 
-        <section id="resultSection" class="result-section hidden">
-
-            <div class="result-header">
-                <div>
-                    <h2>Your AI Travel Plan</h2>
-                    <p id="threadInfo">Thread ID: -</p>
-                </div>
-
-                <div class="result-actions">
-                    <button class="copy-btn" onclick="copyResult()">
-                        Copy
-                    </button>
-
-                    <button class="download-btn" onclick="downloadPDF()">
-                        Download PDF
-                    </button>
-                </div>
-            </div>
-
-            <div id="pdfContent" class="pdf-content">
-                <h1 class="pdf-title">AI Travel Plan</h1>
-                <div id="resultBox" class="result-box"></div>
-            </div>
-
-        </section>
-
-        <section id="errorBox" class="error-box hidden"></section>
-
-    </main>
-
-    <footer>
-        Built with FastAPI, LangGraph, Groq, PostgreSQL, Tavily and AviationStack
-    </footer>
-
-    <!-- Markdown Renderer -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <!-- PDF Download Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-    <!-- Your Custom JS -->
-    <script src="/static/script.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="/static/script.js"></script>
 </body>
 </html>
